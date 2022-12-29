@@ -100,7 +100,7 @@ void loop() {
       if (n > 22 && buf[2] == 'E' && buf[3] == 'a') { // Position/Status/Data Message
         int month = (byte) buf[4];
         int day = (byte) buf[5];
-        int year = 19 + ((byte) buf[6] << 8) + (byte) buf[7];
+        int year = ((byte) buf[6] << 8) + (byte) buf[7];
         int hour = (byte) buf[8];
         int minute = (byte) buf[9];
         int second = (byte) buf[10];
@@ -114,7 +114,8 @@ void loop() {
                                 + 86400 * (day - 1)
                                 +  3600 * (unsigned long) hour
                                 +    60 * (unsigned long) minute
-                                +         (unsigned long) second;
+                                +         (unsigned long) second
+                                + 1024 * 7 * 86400; // Rollover
         so.printf("Timestamp: %ld\r\n", timestamp);
 
         long lat = 0;
