@@ -183,10 +183,10 @@ float geotime(float longitude, float timestamp) {
     float y = (2.0 * PI / 365.0) * (days + (hours - 12.0) / 24.0);
     float eot = 60.0 * 229.18 * (
         0.000075 +
-        0.001868 * cos(1.0 * y * PI / 180.0) -
-        0.032077 * sin(1.0 * y * PI / 180.0) -
-        0.014615 * cos(2.0 * y * PI / 180.0) -
-        0.040849 * sin(2.0 * y * PI / 180.0)
+        0.001868 * cos(radians(1.0 * y)) -
+        0.032077 * sin(radians(1.0 * y)) -
+        0.014615 * cos(radians(2.0 * y)) -
+        0.040849 * sin(radians(2.0 * y))
     );
 
     float seconds = fmod(timestamp, 86400.0) + (longitude * 86400.0 / 360.0) + eot;
