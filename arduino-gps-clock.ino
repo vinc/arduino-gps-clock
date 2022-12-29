@@ -54,14 +54,21 @@ void setup() {
   //ss.write("\r\n");
 
   // Setup GMT Offset
-  int s = 0; // positive: 0x00, negative: 0xff
-  int h = 0;
-  int m = 0;
-  ss.write("@@Ab");
-  ss.write(s);
-  ss.write(h);
+  //int s = 0; // positive: 0x00, negative: 0xff
+  //int h = 0;
+  //int m = 0;
+  //ss.write("@@Ab");
+  //ss.write(s);
+  //ss.write(h);
+  //ss.write(m);
+  //ss.write('A' ^ 'b' ^ s ^ h ^ m);
+  //ss.write("\r\n");
+
+  // Setup Time Mode
+  int m = 1; // GPS: 0, UTC: 1
+  ss.write("@@Aw");
   ss.write(m);
-  ss.write('A' ^ 'b' ^ s ^ h ^ m);
+  ss.write('A' ^ 'w' ^ m);
   ss.write("\r\n");
 
   // Setup Position/Status/Data Message
@@ -82,20 +89,18 @@ void loop() {
     buf.concat(c);
     int n = buf.length();
     if (n > 1 && buf[n - 2] == '\r' && buf[n - 1] == '\n') { // End Of Message
-      /*
       for (int i = 0; i < buf.length(); i++) {
         if (i % 20 == 0) {
           so.printf("\r\n");
         }
-        so.printf("%02x ", (byte) buf[i]);
+        so.printf("%02d ", (byte) buf[i]);
       }
       so.printf("\r\n");
-      */
 
       if (n > 22 && buf[2] == 'E' && buf[3] == 'a') { // Position/Status/Data Message
         int month = (byte) buf[4];
         int day = (byte) buf[5];
-        int year = 2013 + ((byte) buf[6] << 8 + (byte) buf[7]);
+        int year = 19 + ((byte) buf[6] << 8) + (byte) buf[7];
         int hour = (byte) buf[8];
         int minute = (byte) buf[9];
         int second = (byte) buf[10];
@@ -109,8 +114,7 @@ void loop() {
                                 + 86400 * (day - 1)
                                 +  3600 * (unsigned long) hour
                                 +    60 * (unsigned long) minute
-                                +         (unsigned long) second
-                                -  3600 * 2; // GMT Offset
+                                +         (unsigned long) second;
         so.printf("Timestamp: %ld\r\n", timestamp);
 
         long lat = 0;
