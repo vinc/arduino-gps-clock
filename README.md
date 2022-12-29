@@ -17,3 +17,10 @@ receiver to display the time on a 7-segments led display.
 
 - https://github.com/arduino-libraries/Arduino_DebugUtils
 - https://github.com/RobTillaart/Arduino/tree/master/libraries/HT16K33
+
+## TODO
+
+- Add a light sensor and lower brightness at night
+- Set GMT offset
+- Compute daylight saving time
+- Compute height
