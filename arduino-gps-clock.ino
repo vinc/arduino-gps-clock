@@ -7,12 +7,12 @@
 #define GND 11
 #define PPS 12
 #define LED 13
+#define BTN 8
 
 HT16K33 ht(0x70);
 SoftwareSerial ss(RX,TX);
 StreamEx so = Serial;
 String buf;
-bool use_geotime = true;
 
 void setup() {
   // Pulse per second (PPS) signal
@@ -24,6 +24,9 @@ void setup() {
 
   // Light up the built-in led at each PPS
   pinMode(LED, OUTPUT);
+
+  // Button to disable geotime
+  pinMode(BTN, INPUT_PULLUP);
 
   // Communicate with the GPS by TTL
   ss.begin(9600);
@@ -137,7 +140,7 @@ void loop() {
         float longitude = lon / 3600000.0;
         so.printf("Longitude: %7.4f\r\n", longitude);
 
-        if (use_geotime) {
+        if (digitalRead(BTN) == HIGH) {
           float t = floor(100.0 * geotime(longitude, timestamp)) / 100.0; // Avoid rounding up 99.996 to 100.00
           so.printf("Geotime: %05.2f\r\n", t);
           int centiday = floor(t);
