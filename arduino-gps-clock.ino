@@ -12,6 +12,7 @@ HT16K33 ht(0x70);
 SoftwareSerial ss(RX,TX);
 StreamEx so = Serial;
 String buf;
+bool use_geotime = true;
 
 void setup() {
   // Pulse per second (PPS) signal
@@ -89,6 +90,7 @@ void loop() {
     buf.concat(c);
     int n = buf.length();
     if (n > 1 && buf[n - 2] == '\r' && buf[n - 1] == '\n') { // End Of Message
+      /*
       for (int i = 0; i < buf.length(); i++) {
         if (i % 20 == 0) {
           so.printf("\r\n");
@@ -96,8 +98,10 @@ void loop() {
         so.printf("%02d ", (byte) buf[i]);
       }
       so.printf("\r\n");
+      */
 
       if (n > 22 && buf[2] == 'E' && buf[3] == 'a') { // Position/Status/Data Message
+        so.printf("\r\n");
         int month = (byte) buf[4];
         int day = (byte) buf[5];
         int year = ((byte) buf[6] << 8) + (byte) buf[7];
@@ -106,7 +110,6 @@ void loop() {
         int second = (byte) buf[10];
         //int fract = buf[11] << 3 + buf[12] << 2 + buf[13] << 1 + buf[14];
         so.printf("Date: %04d-%02d-%02d %02d:%02d:%02d\r\n", year, month, day, hour, minute, second);
-        ht.displayTime(hour, minute);
 
         // Compute timestamp (in seconds since Unix Epoch)
         unsigned long timestamp = 86400 * days_before_year(year)
@@ -134,13 +137,15 @@ void loop() {
         float longitude = lon / 3600000.0;
         so.printf("Longitude: %7.4f\r\n", longitude);
 
-        float t = floor(100.0 * geotime(longitude, timestamp)) / 100.0; // Avoid rounding up 99.996 to 100.00
-        so.printf("Geotime: %05.2f\r\n", t);
-        int centiday = floor(t);
-        int dimiday = floor(100 * fmod(t, centiday));
-        //ht.displayTime(centiday, dimiday);
-      } else {
-        //so.printf("%s", buf);
+        if (use_geotime) {
+          float t = floor(100.0 * geotime(longitude, timestamp)) / 100.0; // Avoid rounding up 99.996 to 100.00
+          so.printf("Geotime: %05.2f\r\n", t);
+          int centiday = floor(t);
+          int dimiday = round(100.0 * fmod(t, centiday)); // NOTE: floor(42.00) would sometimes produce 41
+          ht.displayTime(centiday, dimiday);
+        } else {
+          ht.displayTime(hour, minute);
+        }
       }
       buf = "";
     }
@@ -175,21 +180,20 @@ bool is_leap_year(int year) {
   }
 }
 
-float geotime(float longitude, float timestamp) {
-    float days = floor(fmod((timestamp / 86400.0), 365.2425));
-    float hours = floor(fmod(timestamp, 86400.0) / 3600.0);
+float geotime(float longitude, unsigned long timestamp) {
+    float days = floor(fmod(timestamp / 86400, 365.2425));
+    float hours = (timestamp % 86400) / 3600;
 
     // Equation of time (https://www.esrl.noaa.gov/gmd/grad/solcalc/solareqns.PDF)
     float y = (2.0 * PI / 365.0) * (days + (hours - 12.0) / 24.0);
     float eot = 60.0 * 229.18 * (
         0.000075 +
-        0.001868 * cos(radians(1.0 * y)) -
-        0.032077 * sin(radians(1.0 * y)) -
-        0.014615 * cos(radians(2.0 * y)) -
-        0.040849 * sin(radians(2.0 * y))
+        0.001868 * cos(1.0 * y) -
+        0.032077 * sin(1.0 * y) -
+        0.014615 * cos(2.0 * y) -
+        0.040849 * sin(2.0 * y)
     );
 
-    float seconds = fmod(timestamp, 86400.0) + (longitude * 86400.0 / 360.0) + eot;
-
+    float seconds = (timestamp % 86400) + (longitude * 86400.0 / 360.0) + eot;
     return fmod(100.0 * seconds / 86400.0, 100.0);
 }
